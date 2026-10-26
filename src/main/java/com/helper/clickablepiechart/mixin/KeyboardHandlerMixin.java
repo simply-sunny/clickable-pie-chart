@@ -1,6 +1,7 @@
 package com.helper.clickablepiechart.mixin;
 
 import com.helper.clickablepiechart.ClickablePieChartHandler;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.input.KeyEvent;
@@ -18,8 +19,8 @@ public abstract class KeyboardHandlerMixin {
     @Inject(method = "keyPress", at = @At("HEAD"), cancellable = true)
     private void clickablepiechart$onKeyPress(long window, int action, KeyEvent keyEvent, CallbackInfo ci) {
         if (ClickablePieChartHandler.isPieChartActive(this.minecraft)) {
-            if (action == 1) { // GLFW_PRESS
-                if (ClickablePieChartHandler.handleKeyPress(this.minecraft, keyEvent.key())) {
+            if (action == InputConstants.PRESS) {
+                if (ClickablePieChartHandler.handleKeyPress(this.minecraft, keyEvent)) {
                     ci.cancel();
                     return;
                 }

@@ -17,7 +17,7 @@ In vanilla Minecraft, you can only navigate the profiler using number keys `1`�
   - *Normal mode:* `[Hold Shift] to unlock mouse & click`
   - *Cursor mode:* `[Shift] Click: Select | Right-click: Back`
 - **Shift + Number Shortcut**: Holding Shift and pressing number keys `0`–`9` acts as a shortcut for `10`–`19` (e.g., **`Shift + 2`** selects entry **12**).
-- **Mouse Wheel Support**: Scroll your mouse wheel over the pie chart to cycle through items.
+- **Mouse Wheel Support**: Scroll your mouse wheel (or swipe sideways on a trackpad) over the pie chart to cycle through items, then left-click to enter the picked one. Moving the mouse goes back to picking by hover.
 - **Toggle Mode**: Press the **`~`** (Grave / Tilde) key while the pie chart is open to toggle cursor mode on or off without needing to hold Shift.
 - **Seamless Camera Movement**: Releasing Shift instantly re-locks the mouse cursor to your normal camera view, so gameplay and pie-raying are never disrupted.
 

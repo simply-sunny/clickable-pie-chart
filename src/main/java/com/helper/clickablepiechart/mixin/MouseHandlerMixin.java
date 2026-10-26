@@ -2,6 +2,7 @@ package com.helper.clickablepiechart.mixin;
 
 import com.helper.clickablepiechart.ClickablePieChartClient;
 import com.helper.clickablepiechart.ClickablePieChartHandler;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.input.MouseButtonInfo;
@@ -20,12 +21,12 @@ public abstract class MouseHandlerMixin {
     @Inject(method = "onButton", at = @At("HEAD"), cancellable = true)
     private void clickablepiechart$onButton(long window, MouseButtonInfo buttonInfo, int action, CallbackInfo ci) {
         if (this.minecraft.gui.screen() == null && ClickablePieChartHandler.isPieChartActive(this.minecraft)) {
-            ClickablePieChartClient.LOGGER.info("[ClickablePieChart] onButton: action={}, button={}, mouseGrabbed={}", action, buttonInfo.button(), this.mouseGrabbed);
-            if (action == 1) { // GLFW_PRESS
+            ClickablePieChartClient.LOGGER.debug("[ClickablePieChart] onButton: action={}, button={}, mouseGrabbed={}", action, buttonInfo.button(), this.mouseGrabbed);
+            if (action == InputConstants.PRESS) {
                 if (ClickablePieChartHandler.onMouseClick(this.minecraft, buttonInfo.button())) {
                     ci.cancel();
                 }
-            } else if (action == 0) { // GLFW_RELEASE
+            } else if (action == InputConstants.RELEASE) {
                 if (ClickablePieChartHandler.onMouseRelease(this.minecraft, buttonInfo.button())) {
                     ci.cancel();
                 }
@@ -36,7 +37,7 @@ public abstract class MouseHandlerMixin {
     @Inject(method = "onScroll", at = @At("HEAD"), cancellable = true)
     private void clickablepiechart$onScroll(long window, double horizontal, double vertical, CallbackInfo ci) {
         if (this.minecraft.gui.screen() == null && ClickablePieChartHandler.isPieChartActive(this.minecraft)) {
-            if (ClickablePieChartHandler.onMouseScroll(this.minecraft, vertical)) {
+            if (ClickablePieChartHandler.onMouseScroll(this.minecraft, horizontal, vertical)) {
                 ci.cancel();
             }
         }

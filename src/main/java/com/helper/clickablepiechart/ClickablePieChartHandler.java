@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.debugchart.ProfilerPieChart;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.profiling.ProfileResults;
@@ -36,6 +37,10 @@ public class ClickablePieChartHandler {
     private static int pieCenterX = 0;
     private static int pieCenterY = 0;
     private static int visibleItemCount = 0;
+    // The entry picked with the scroll wheel, kept until the mouse moves; -1 for none.
+    private static int scrolledIndex = -1;
+    private static double scrolledAtX = Double.NaN;
+    private static double scrolledAtY = Double.NaN;
 
     public static void init() {
     }
@@ -129,9 +134,9 @@ public class ClickablePieChartHandler {
             return -1;
         }
 
-        // Header [0]
+        // Header [0], which goes back up; there's nothing above the top level
         if (mouseY >= headerTop && mouseY < headerBottom) {
-            return 0;
+            return path.isEmpty() ? -1 : 0;
         }
 
         // Pie chart graphic
@@ -211,6 +216,14 @@ public class ClickablePieChartHandler {
         visibleItemCount = times.size();
 
         hoveredIndex = calculateHover(mc);
+        // A scrolled-to entry stays picked until the mouse moves.
+        if (scrolledIndex >= 0) {
+            if (getMouseDebugX(mc) != scrolledAtX || getMouseDebugY(mc) != scrolledAtY || scrolledIndex > times.size()) {
+                scrolledIndex = -1;
+            } else {
+                hoveredIndex = scrolledIndex;
+            }
+        }
 
         boolean cursorActive = isCursorModeActive(mc);
 
@@ -253,33 +266,26 @@ public class ClickablePieChartHandler {
         ProfilerPieChart chart = minecraft.getDebugOverlay().getProfilerPieChart();
         if (chart == null) return false;
 
-        int target = calculateHover(minecraft);
-        if (target < 0) {
-            target = hoveredIndex;
+        int target = scrolledIndex >= 0 ? scrolledIndex : calculateHover(minecraft);
+
+        ClickablePieChartClient.LOGGER.debug("[ClickablePieChart] Mouse click (button={}) -> target index: {}", button, target);
+
+        // Since 26.3 the game reads input through SDL, which numbers the buttons left 1, middle 2, right 3
+        // (GLFW's left was 0 and right 1). Use the game's constants rather than numbers.
+        if (button == InputConstants.MOUSE_BUTTON_LEFT && target >= 0) {
+            chart.profilerPieChartKeyPress(target);
+            scrolledIndex = -1;
+            playClickSound(minecraft);
+            return true;
         }
-
-        ClickablePieChartClient.LOGGER.info("[ClickablePieChart] Mouse click (button={}) -> target index: {}", button, target);
-
-        if (target >= 0) {
-            if (button == 0) { // Left click
-                chart.profilerPieChartKeyPress(target);
-                playClickSound(minecraft);
-                return true;
-            } else if (button == 1) { // Right click
-                chart.profilerPieChartKeyPress(0);
-                playClickSound(minecraft);
-                return true;
-            }
-        } else if (isMouseOverPanel(minecraft)) {
-            if (button == 1) { // Right click on panel -> go back
-                chart.profilerPieChartKeyPress(0);
-                playClickSound(minecraft);
-                return true;
-            }
-            return true; // Consume click on panel background so it doesn't grab mouse
+        if (button == InputConstants.MOUSE_BUTTON_RIGHT && isMouseOverPanel(minecraft)) {
+            chart.profilerPieChartKeyPress(0);
+            scrolledIndex = -1;
+            playClickSound(minecraft);
+            return true;
         }
-
-        return false;
+        // In cursor mode, any other click is used up too, so it doesn't grab the mouse back or hit something in the world.
+        return isCursorModeActive(minecraft) || isMouseOverPanel(minecraft);
     }
 
     public static boolean onMouseRelease(Minecraft minecraft, int button) {
@@ -287,26 +293,22 @@ public class ClickablePieChartHandler {
         return isMouseOverPanel(minecraft);
     }
 
-    public static boolean onMouseScroll(Minecraft minecraft, double vertical) {
+    public static boolean onMouseScroll(Minecraft minecraft, double horizontal, double vertical) {
         if (!isPieChartActive(minecraft) || !isMouseOverPanel(minecraft)) return false;
 
-        if (visibleItemCount > 0) {
-            if (vertical > 0) {
-                if (hoveredIndex <= 1) {
-                    hoveredIndex = 0;
-                } else {
-                    hoveredIndex--;
-                }
-            } else if (vertical < 0) {
-                if (hoveredIndex < visibleItemCount) {
-                    hoveredIndex++;
-                }
-            }
+        // On macOS, holding Shift (as cursor mode needs) turns the wheel into sideways scrolling.
+        double amount = vertical != 0 ? vertical : horizontal;
+        if (visibleItemCount > 0 && amount != 0) {
+            int from = scrolledIndex >= 0 ? scrolledIndex : Math.max(hoveredIndex, 0);
+            scrolledIndex = amount > 0 ? Math.max(0, from - 1) : Math.min(visibleItemCount, from + 1);
+            scrolledAtX = getMouseDebugX(minecraft);
+            scrolledAtY = getMouseDebugY(minecraft);
         }
         return true;
     }
 
-    public static boolean handleKeyPress(Minecraft minecraft, int keyCode) {
+    public static boolean handleKeyPress(Minecraft minecraft, KeyEvent event) {
+        int keyCode = event.key();
         if (!isPieChartActive(minecraft)) return false;
         if (minecraft.gui.screen() != null) return false;
 
@@ -320,12 +322,9 @@ public class ClickablePieChartHandler {
 
         boolean shift = isShiftHeld(minecraft);
 
-        int digit = -1;
-        if (keyCode >= InputConstants.KEY_0 && keyCode <= InputConstants.KEY_9) {
-            digit = keyCode - InputConstants.KEY_0;
-        } else if (keyCode >= InputConstants.KEY_NUMPAD0 && keyCode <= InputConstants.KEY_NUMPAD9) {
-            digit = keyCode - InputConstants.KEY_NUMPAD0;
-        }
+        // The game's own reading of the key as a digit: with SDL key codes, 0 doesn't come before 1-9,
+        // on the number row or the keypad, so a range check can't find them.
+        int digit = InputConstants.getKey(event).getNumericKeyValue().orElse(-1);
 
         if (digit >= 0 && shift) {
             // Shift + 0 -> 10, Shift + 1 -> 11, Shift + 2 -> 12, etc.
