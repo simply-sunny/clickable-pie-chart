@@ -1,0 +1,26 @@
+{
+	"schemaVersion": 1,
+	"id": "clickablepiechart",
+	"version": "${version}",
+	"name": "Clickable Pie Chart",
+	"description": "Allows you to use the mouse to click entries and slices in the F3 debug profiler pie chart, with Shift to unlock the cursor.",
+	"authors": [
+		"smbp"
+	],
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"com.helper.clickablepiechart.ClickablePieChartClient"
+		]
+	},
+	"mixins": [
+		"clickablepiechart.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.16.14",
+		"minecraft": "26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

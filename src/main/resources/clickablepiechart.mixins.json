@@ -1,0 +1,15 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "com.helper.clickablepiechart.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"ProfilerPieChartAccessor",
+		"ProfilerPieChartMixin",
+		"MouseHandlerMixin",
+		"KeyboardHandlerMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
