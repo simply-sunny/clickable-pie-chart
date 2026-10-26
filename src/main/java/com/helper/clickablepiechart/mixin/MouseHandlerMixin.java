@@ -1,5 +1,6 @@
 package com.helper.clickablepiechart.mixin;
 
+import com.helper.clickablepiechart.ClickablePieChartClient;
 import com.helper.clickablepiechart.ClickablePieChartHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
@@ -19,6 +20,7 @@ public abstract class MouseHandlerMixin {
     @Inject(method = "onButton", at = @At("HEAD"), cancellable = true)
     private void clickablepiechart$onButton(long window, MouseButtonInfo buttonInfo, int action, CallbackInfo ci) {
         if (this.minecraft.gui.screen() == null && ClickablePieChartHandler.isPieChartActive(this.minecraft)) {
+            ClickablePieChartClient.LOGGER.info("[ClickablePieChart] onButton: action={}, button={}, mouseGrabbed={}", action, buttonInfo.button(), this.mouseGrabbed);
             if (action == 1) { // GLFW_PRESS
                 if (ClickablePieChartHandler.onMouseClick(this.minecraft, buttonInfo.button())) {
                     ci.cancel();

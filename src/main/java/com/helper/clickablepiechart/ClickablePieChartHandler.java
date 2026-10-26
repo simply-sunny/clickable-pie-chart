@@ -12,12 +12,15 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.profiling.ProfileResults;
 import net.minecraft.util.profiling.ResultField;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ClickablePieChartHandler {
     private static boolean mouseReleasedByMod = false;
     private static boolean toggleCursorMode = false;
     private static int hoveredIndex = -1;
+    private static int lastScreenWidth = 0;
+    private static int lastScreenHeight = 0;
 
     // Layout bounds (in debug GUI coordinate space)
     private static int panelLeft = 0;
@@ -35,7 +38,6 @@ public class ClickablePieChartHandler {
     private static int visibleItemCount = 0;
 
     public static void init() {
-        // Ready for client lifecycle
     }
 
     public static boolean isPieChartActive(Minecraft minecraft) {
@@ -55,7 +57,7 @@ public class ClickablePieChartHandler {
         if (minecraft == null || minecraft.mouseHandler == null) return;
 
         if (minecraft.gui.screen() != null) {
-            // Regular GUI screen has focus
+            // A GUI screen is open (e.g. Pause screen, Chat).
             mouseReleasedByMod = false;
             return;
         }
@@ -75,32 +77,24 @@ public class ClickablePieChartHandler {
         }
     }
 
-    public static int getDebugScale(Minecraft minecraft) {
-        Window window = minecraft.getWindow();
-        int guiScale = window.getGuiScale();
-        int debugGuiScale = minecraft.options.debugGuiScale().get();
-        int debugScale;
-        if (debugGuiScale == -1) {
-            debugScale = guiScale;
-        } else if (debugGuiScale == 0) {
-            debugScale = window.calculateScale(0, minecraft.isEnforceUnicode()) / 2;
-        } else {
-            debugScale = window.calculateScale(debugGuiScale, minecraft.isEnforceUnicode());
+    public static double getMouseDebugX(Minecraft mc) {
+        if (mc == null || mc.getWindow() == null) return 0;
+        Window window = mc.getWindow();
+        double guiX = mc.mouseHandler.getScaledXPos(window);
+        if (lastScreenWidth > 0 && window.getGuiScaledWidth() > 0) {
+            return guiX * ((double) lastScreenWidth / (double) window.getGuiScaledWidth());
         }
-        if (debugScale >= guiScale || debugScale <= 0) {
-            debugScale = guiScale;
-        }
-        return debugScale;
+        return guiX;
     }
 
-    public static double getMouseDebugX(Minecraft minecraft) {
-        int scale = getDebugScale(minecraft);
-        return minecraft.mouseHandler.xpos() / scale;
-    }
-
-    public static double getMouseDebugY(Minecraft minecraft) {
-        int scale = getDebugScale(minecraft);
-        return minecraft.mouseHandler.ypos() / scale;
+    public static double getMouseDebugY(Minecraft mc) {
+        if (mc == null || mc.getWindow() == null) return 0;
+        Window window = mc.getWindow();
+        double guiY = mc.mouseHandler.getScaledYPos(window);
+        if (lastScreenHeight > 0 && window.getGuiScaledHeight() > 0) {
+            return guiY * ((double) lastScreenHeight / (double) window.getGuiScaledHeight());
+        }
+        return guiY;
     }
 
     public static boolean isMouseOverPanel(Minecraft minecraft) {
@@ -110,7 +104,70 @@ public class ClickablePieChartHandler {
         return mouseX >= panelLeft && mouseX <= panelRight && mouseY >= panelTop && mouseY <= panelBottom;
     }
 
+    public static int calculateHover(Minecraft mc) {
+        if (!isPieChartActive(mc)) return -1;
+        ProfilerPieChart chart = mc.getDebugOverlay().getProfilerPieChart();
+        if (chart == null) return -1;
+
+        ProfilerPieChartAccessor acc = (ProfilerPieChartAccessor) chart;
+        ProfileResults results = acc.clickablepiechart$getResults();
+        if (results == null) return -1;
+
+        String path = acc.clickablepiechart$getTreePath();
+        if (path == null) path = "";
+
+        List<ResultField> rawTimes = results.getTimes(path);
+        if (rawTimes.isEmpty()) return -1;
+
+        List<ResultField> times = new ArrayList<>(rawTimes);
+        times.removeFirst(); // removes root
+
+        double mouseX = getMouseDebugX(mc);
+        double mouseY = getMouseDebugY(mc);
+
+        if (mouseX < panelLeft || mouseX > panelRight || mouseY < panelTop || mouseY > panelBottom) {
+            return -1;
+        }
+
+        // Header [0]
+        if (mouseY >= headerTop && mouseY < headerBottom) {
+            return 0;
+        }
+
+        // Pie chart graphic
+        if (mouseY >= pieTop && mouseY <= pieBottom) {
+            double dx = mouseX - pieCenterX;
+            double dy = (mouseY - pieCenterY) / 0.5;
+            if (dx * dx + dy * dy <= 105.0 * 105.0) {
+                double angle = Math.atan2(dx, dy);
+                if (angle < 0.0) angle += 2.0 * Math.PI;
+                double targetPct = angle / (2.0 * Math.PI) * 100.0;
+                double accumPct = 0.0;
+                for (int i = 0; i < times.size(); i++) {
+                    double slice = times.get(i).percentage;
+                    if (targetPct >= accumPct && targetPct < accumPct + slice) {
+                        return i + 1;
+                    }
+                    accumPct += slice;
+                }
+            }
+        }
+
+        // List entries
+        if (mouseY >= listTop && mouseY <= listBottom) {
+            int listIdx = (int) ((mouseY - listTop) / 9);
+            if (listIdx >= 0 && listIdx < times.size()) {
+                return listIdx + 1;
+            }
+        }
+
+        return -1;
+    }
+
     public static void renderOverlay(ProfilerPieChart chart, GuiGraphicsExtractor extractor, int screenWidth, int screenHeight) {
+        lastScreenWidth = screenWidth;
+        lastScreenHeight = screenHeight;
+
         ProfilerPieChartAccessor acc = (ProfilerPieChartAccessor) chart;
         ProfileResults results = acc.clickablepiechart$getResults();
         if (results == null) return;
@@ -121,8 +178,8 @@ public class ClickablePieChartHandler {
         List<ResultField> rawTimes = results.getTimes(path);
         if (rawTimes.isEmpty()) return;
 
-        List<ResultField> times = new java.util.ArrayList<>(rawTimes);
-        times.removeFirst(); // removes root/header element, matching vanilla behavior
+        List<ResultField> times = new ArrayList<>(rawTimes);
+        times.removeFirst(); // removes root/header element
 
         Minecraft mc = Minecraft.getInstance();
         Font font = acc.clickablepiechart$getFont();
@@ -153,63 +210,38 @@ public class ClickablePieChartHandler {
         pieCenterY = pieYCenter;
         visibleItemCount = times.size();
 
-        double mouseX = getMouseDebugX(mc);
-        double mouseY = getMouseDebugY(mc);
-
-        int currentHover = -1;
-        boolean isOver = mouseX >= panelLeft && mouseX <= panelRight && mouseY >= panelTop && mouseY <= panelBottom;
-
-        if (isOver) {
-            if (mouseY >= headerTop && mouseY < headerBottom) {
-                currentHover = 0; // Header [0]
-            } else if (mouseY >= pieTop && mouseY <= pieBottom) {
-                double dx = mouseX - pieCenterX;
-                double dy = (mouseY - pieCenterY) / 0.5;
-                if (dx * dx + dy * dy <= 105.0 * 105.0) {
-                    double angle = Math.atan2(dx, dy);
-                    if (angle < 0.0) angle += 2.0 * Math.PI;
-                    double targetPct = angle / (2.0 * Math.PI) * 100.0;
-                    double accumPct = 0.0;
-                    for (int i = 0; i < times.size(); i++) {
-                        double slice = times.get(i).percentage;
-                        if (targetPct >= accumPct && targetPct < accumPct + slice) {
-                            currentHover = i + 1;
-                            break;
-                        }
-                        accumPct += slice;
-                    }
-                }
-            } else if (mouseY >= listTop && mouseY <= listBottom) {
-                int listIdx = (int) ((mouseY - listTop) / 9);
-                if (listIdx >= 0 && listIdx < times.size()) {
-                    currentHover = listIdx + 1;
-                }
-            }
-        }
-        hoveredIndex = currentHover;
+        hoveredIndex = calculateHover(mc);
 
         boolean cursorActive = isCursorModeActive(mc);
 
         // Highlight hovered entry or header
         if (cursorActive && hoveredIndex >= 0) {
             if (hoveredIndex > 0 && hoveredIndex <= times.size()) {
-                int lineY = listTop + (hoveredIndex - 1) * 9;
+                int itemIdx = hoveredIndex - 1;
+                int lineY = listTop + itemIdx * 9;
                 // Highlight box
-                extractor.fill(leftX - 3, lineY, rightX + 3, lineY + 9, 0x45FFFFFF);
+                extractor.fill(leftX - 3, lineY, rightX + 3, lineY + 9, 0x50FFFFFF);
                 // Cyan accent markers
-                extractor.fill(leftX - 4, lineY, leftX - 2, lineY + 9, 0xFF55FFFF);
-                extractor.fill(rightX + 2, lineY, rightX + 4, lineY + 9, 0xFF55FFFF);
+                extractor.fill(leftX - 4, lineY, leftX - 2, lineY + 9, 0xFF00FFFF);
+                extractor.fill(rightX + 2, lineY, rightX + 4, lineY + 9, 0xFF00FFFF);
             } else if (hoveredIndex == 0) {
-                extractor.fill(leftX - 3, headerTop, rightX + 3, headerBottom, 0x45FFFFFF);
+                extractor.fill(leftX - 3, headerTop, rightX + 3, headerBottom, 0x50FFFFFF);
                 extractor.fill(leftX - 4, headerTop, leftX - 2, headerBottom, 0xFFFFAA00);
             }
         }
 
         // Information / Hint bar
         int hintY = bottomY + 6;
-        extractor.fill(leftX - 5, hintY - 1, rightX + 5, hintY + 11, 0xC0101010);
+        extractor.fill(leftX - 5, hintY - 1, rightX + 5, hintY + 11, 0xD0101010);
         if (cursorActive) {
-            extractor.text(font, "§b[Shift] §fClick: Select  §7|  §fRight-click: Back", leftX, hintY + 1, 0xFFFFFFFF);
+            if (hoveredIndex > 0 && hoveredIndex <= times.size()) {
+                String name = times.get(hoveredIndex - 1).name;
+                extractor.text(font, "§b[" + hoveredIndex + "] §e" + name + " §7(Click to open)", leftX, hintY + 1, 0xFFFFFFFF);
+            } else if (hoveredIndex == 0) {
+                extractor.text(font, "§6[0] Back to parent §7(Click to go back)", leftX, hintY + 1, 0xFFFFFFFF);
+            } else {
+                extractor.text(font, "§b[Shift] §fClick: Select  §7|  §fRight-click: Back", leftX, hintY + 1, 0xFFFFFFFF);
+            }
         } else {
             extractor.text(font, "§e[Hold Shift] §7to unlock mouse & click", leftX, hintY + 1, 0xFFAAAAAA);
         }
@@ -221,9 +253,16 @@ public class ClickablePieChartHandler {
         ProfilerPieChart chart = minecraft.getDebugOverlay().getProfilerPieChart();
         if (chart == null) return false;
 
-        if (hoveredIndex >= 0) {
+        int target = calculateHover(minecraft);
+        if (target < 0) {
+            target = hoveredIndex;
+        }
+
+        ClickablePieChartClient.LOGGER.info("[ClickablePieChart] Mouse click (button={}) -> target index: {}", button, target);
+
+        if (target >= 0) {
             if (button == 0) { // Left click
-                chart.profilerPieChartKeyPress(hoveredIndex);
+                chart.profilerPieChartKeyPress(target);
                 playClickSound(minecraft);
                 return true;
             } else if (button == 1) { // Right click
@@ -232,12 +271,12 @@ public class ClickablePieChartHandler {
                 return true;
             }
         } else if (isMouseOverPanel(minecraft)) {
-            if (button == 1) { // Right click anywhere on panel navigates back
+            if (button == 1) { // Right click on panel -> go back
                 chart.profilerPieChartKeyPress(0);
                 playClickSound(minecraft);
                 return true;
             }
-            return true; // Consume click on panel background
+            return true; // Consume click on panel background so it doesn't grab mouse
         }
 
         return false;
@@ -251,7 +290,6 @@ public class ClickablePieChartHandler {
     public static boolean onMouseScroll(Minecraft minecraft, double vertical) {
         if (!isPieChartActive(minecraft) || !isMouseOverPanel(minecraft)) return false;
 
-        // Move hover selection when scrolling
         if (visibleItemCount > 0) {
             if (vertical > 0) {
                 if (hoveredIndex <= 1) {
