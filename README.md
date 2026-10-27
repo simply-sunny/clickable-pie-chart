@@ -1,44 +1,59 @@
-# Clickable Pie Chart
+<h1 align="center">Clickable Pie Chart</h1>
 
-A helper mod for Minecraft Fabric (26.3) that makes the **F3 debug profiler pie chart** (`Shift + F3`) fully interactive using your mouse.
-
-In vanilla Minecraft, you can only navigate the profiler using number keys `1`–`9` and `0` (back). If a category has 10 or more entries (such as **`[12] level`** or entities/block entities further down), there is physically no key to select it.
-
-**Clickable Pie Chart** solves this by letting you click any item directly with your mouse.
+<p align="center">Mouse navigation for the F3 profiler pie chart.<br>Fabric & Quilt &nbsp;|&nbsp; 26.3</p>
 
 ---
 
-## Features
+In vanilla Minecraft the profiler pie chart behind `Shift + F3` is driven by the number keys alone: `1`–`9` drill into a category's first entries and `0` goes back, so anything deeper, such as `[12] level`, is out of reach. Hold `Shift` and the chart follows the mouse instead: hover a row or a slice and click to drill in, right-click to go back. Release `Shift` and the cursor returns to the camera exactly as it would without the mod.
 
-- **Mouse Clicking**: Hold **Shift** while the pie chart is open to unlock your mouse cursor. Click any entry (`[1]`, `[2]`, ..., `[12] level`, etc.) or click the pie slices directly to drill down.
-- **Back Navigation**: Right-click anywhere on the pie chart panel or click `[0]` to navigate back to the parent category.
-- **Visual Hover Highlights**: Hovering over any entry in the list or slice in the pie chart highlights the row with a clean indicator so you always know what you're selecting.
-- **Status / Hint Bar**: Displays clear in-game reminders at the bottom of the pie chart:
-  - *Normal mode:* `[Hold Shift] to unlock mouse & click`
-  - *Cursor mode:* `[Shift] Click: Select | Right-click: Back`
-- **Shift + Number Shortcut**: Holding Shift and pressing number keys `0`–`9` acts as a shortcut for `10`–`19` (e.g., **`Shift + 2`** selects entry **12**).
-- **Mouse Wheel Support**: Scroll your mouse wheel (or swipe sideways on a trackpad) over the pie chart to cycle through items, then left-click to enter the picked one. Moving the mouse goes back to picking by hover.
-- **Toggle Mode**: Press the **`~`** (Grave / Tilde) key while the pie chart is open to toggle cursor mode on or off without needing to hold Shift.
-- **Seamless Camera Movement**: Releasing Shift instantly re-locks the mouse cursor to your normal camera view, so gameplay and pie-raying are never disrupted.
+## Install
 
----
+Client-side only. Servers don't need it.
 
-## How to Use
+1. Install [Fabric Loader](https://fabricmc.net/use/) (or Quilt Loader) and [Fabric API](https://modrinth.com/mod/fabric-api) for 26.3.
+2. Put the jar from [Releases](https://github.com/simply-sunny/ClickablePieChart/releases) in `mods`.
 
-1. Press **`Shift + F3`** in-game to display the debug profiler pie chart.
-2. Hold **`Shift`** to free the mouse cursor.
-3. Hover over any entry (e.g., `[12] level`) and **Left-Click** to enter it.
-4. **Right-Click** or click `[0]` to go back to the parent category.
-5. Release **`Shift`** to return to normal first-person camera control.
+## Use
 
----
+| Action | How |
+| --- | --- |
+| Open the pie chart | `Shift + F3` (as in vanilla) |
+| Drill into a row or slice | Hold `Shift`, then left-click it |
+| Back to the parent category | Right-click, or click `[0]` |
+| Cycle entries with the wheel | Scroll over the chart, then click the picked one |
+| Pick 10–19 with the keyboard | Hold `Shift` with a number key, e.g. `Shift + 2` selects `12` |
+| Toggle cursor mode | `~` while the chart is open |
 
-## Building
+- Hovering highlights the row or slice you are about to enter.
+- The hint bar at the bottom of the chart shows which mode is active: `[Hold Shift] to unlock mouse & click` normally, `[Shift] Click: Select | Right-click: Back` when the cursor is free.
+- Press `~` while the chart is open to toggle cursor mode without holding `Shift`; press it again to hand the mouse back.
+- With the wheel, moving the mouse goes back to picking by hover.
+- Releasing `Shift` instantly re-locks the cursor; gameplay and the camera never notice.
 
-Requires **JDK 25** and Gradle:
+## Troubleshooting
+
+| Problem | Fix |
+| --- | --- |
+| The mouse does nothing | Hold `Shift`, or press `~` for cursor mode. |
+| The wheel does nothing | Scroll over the pie chart itself, not the log panels beside it. |
+| The pie chart never appears | It is vanilla `Shift + F3`. This mod only adds mouse handling to it. |
+
+## Develop
+
+Requires JDK 25.
 
 ```bash
-./gradlew build
+./gradlew clean buildAll
 ```
 
-The compiled mod jar will be in `build/libs/clickable-piechart-1.0.0.jar`.
+This builds every supported Minecraft version; jars land in `build/libs/`. To build one target:
+
+```bash
+./gradlew :26.3:build
+```
+
+To add a Minecraft version: add an entry to `minecraftTargets` in `build.gradle`, add it to `targets` in `settings.gradle`, and put its code in `versions/<mc>/`. The mod touches Minecraft's own pie chart classes through mixins in `versions/26.3/src/main/java`, so each version lives there; anything version-independent would go in `src/common/java`.
+
+## License
+
+MIT, see [LICENSE](LICENSE). Copyright © 2026 Saunak Karnati (simply-sunny).

@@ -3,10 +3,14 @@
 	"id": "clickablepiechart",
 	"version": "${version}",
 	"name": "Clickable Pie Chart",
-	"description": "Allows you to use the mouse to click entries and slices in the F3 debug profiler pie chart, with Shift to unlock the cursor.",
+	"description": "Mouse navigation for the F3 profiler pie chart: hold Shift to free the cursor, click entries or slices to drill in, right-click to go back.",
 	"authors": [
-		"smbp"
+		"simply-sunny"
 	],
+	"contact": {
+		"sources": "https://github.com/simply-sunny/ClickablePieChart",
+		"issues": "https://github.com/simply-sunny/ClickablePieChart/issues"
+	},
 	"license": "MIT",
 	"environment": "client",
 	"entrypoints": {
