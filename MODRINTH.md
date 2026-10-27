@@ -13,9 +13,9 @@ This file is the source of truth for the Modrinth project settings, version meta
 | Summary | Mouse navigation for the F3 profiler pie chart. Fabric and Quilt 26.3, client-side. |
 | License | MIT |
 | Environment | Client-side only (`client_only`) |
-| Source | https://github.com/simply-sunny/ClickablePieChart |
-| Issues | https://github.com/simply-sunny/ClickablePieChart/issues |
-| Wiki / docs | https://github.com/simply-sunny/ClickablePieChart#use |
+| Source | https://github.com/simply-sunny/clickable-pie-chart |
+| Issues | https://github.com/simply-sunny/clickable-pie-chart/issues |
+| Wiki / docs | https://github.com/simply-sunny/clickable-pie-chart#use |
 | Discord | *(none)* |
 | Donation links | *(none)* |
 | Icon | *(none yet)* |
@@ -64,4 +64,4 @@ In vanilla Minecraft the profiler pie chart behind `Shift + F3` is driven by the
 
 ## License
 
-MIT, see the [LICENSE](https://github.com/simply-sunny/ClickablePieChart/blob/main/LICENSE).
+MIT, see the [LICENSE](https://github.com/simply-sunny/clickable-pie-chart/blob/main/LICENSE).

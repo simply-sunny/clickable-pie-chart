@@ -14,8 +14,8 @@ CurseForge projects can't be created through the API, so the project is made by 
 | Other categories | Developer Tools, Tweak |
 | License | MIT |
 | Avatar | *(none yet)* |
-| Source | https://github.com/simply-sunny/ClickablePieChart |
-| Issues | https://github.com/simply-sunny/ClickablePieChart/issues |
+| Source | https://github.com/simply-sunny/clickable-pie-chart |
+| Issues | https://github.com/simply-sunny/clickable-pie-chart/issues |
 
 ## Files
 

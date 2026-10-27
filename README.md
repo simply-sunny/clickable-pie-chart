@@ -11,7 +11,7 @@ In vanilla Minecraft the profiler pie chart behind `Shift + F3` is driven by the
 Client-side only. Servers don't need it.
 
 1. Install [Fabric Loader](https://fabricmc.net/use/) (or Quilt Loader) and [Fabric API](https://modrinth.com/mod/fabric-api) for 26.3.
-2. Put the jar from [Releases](https://github.com/simply-sunny/ClickablePieChart/releases) in `mods`.
+2. Put the jar from [Releases](https://github.com/simply-sunny/clickable-pie-chart/releases) in `mods`.
 
 ## Use
 

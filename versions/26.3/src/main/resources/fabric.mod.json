@@ -8,8 +8,8 @@
 		"simply-sunny"
 	],
 	"contact": {
-		"sources": "https://github.com/simply-sunny/ClickablePieChart",
-		"issues": "https://github.com/simply-sunny/ClickablePieChart/issues"
+		"sources": "https://github.com/simply-sunny/clickable-pie-chart",
+		"issues": "https://github.com/simply-sunny/clickable-pie-chart/issues"
 	},
 	"license": "MIT",
 	"environment": "client",
