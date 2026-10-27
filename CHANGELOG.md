@@ -2,7 +2,7 @@
 
 All notable changes to Clickable Pie Chart are documented here. This project follows [Semantic Versioning](https://semver.org/).
 
-## 1.0.0 — 2026-10-26
+## [1.0.0] - 2026-10-26
 
 ### Added
 
